@@ -106,17 +106,13 @@ class Test:
         return proc
 
     def local_cmd(self, info_str, cmd):
-        info(info_str)
-        try:
-            retcode = subprocess.check_call(cmd)
-            if retcode < 0:
-                err(info_str)
-                return False
-        except OSError as e:
-            print >>sys.stderr, "error: execution failed:", e
+        proc = self.start_cmd(info_str, cmd)
+        if not proc:
             return False
-        except subprocess.CalledProcessError as e:
-            print >>sys.stderr, "error: execution failed:", e
+
+        retcode = proc.wait()
+        if retcode < 0:
+            err_proc(proc, info_str, "", "")
             return False
 
         return True
