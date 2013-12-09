@@ -135,10 +135,22 @@ class Test:
         return self.board_cmd(info_str, cmd)
 
     def set_modes(self, info_str, desired_modes):
+        i_str = '%s: start monitoring link messages on board' % info_str
+        proc = self.start_link_monitor(i_str)
+        if proc == None:
+            return False
+
         i_str = '%s: setting switch negotiation parameters' % info_str
         retcode = self.swtich_speed(i_str, desired_modes)
         if not retcode:
             return retcode
+
+        i_str = ('%s: collect output from monitoring of link messages ' +
+                 'on board') % info_str
+        retcode = self.collect_link_monitor(proc, i_str)
+        if not retcode:
+            return retcode
+
         i_str = '%s: checking link speed on board' % info_str
         return self.check_board_speed(i_str, max_mode(desired_modes))
 
@@ -146,15 +158,13 @@ class Test:
         info_str = 'resetting negotiation parameters'
         return self.set_modes(info_str, self.board_modes)
 
-    def start_link_monitor(self):
-        info_msg = 'start monitoring link messages on board'
+    def start_link_monitor(self, info_msg):
         cmd = [ 'ip', '--oneline', 'monitor', 'link' ]
         cmd = self.board_cmd_args(cmd)
 
         return self.start_cmd(info_msg, cmd)
 
-    def collect_link_monitor(self, proc):
-        info_str = "collecting monitor link messages from board"
+    def collect_link_monitor(self, proc, info_str):
         info(info_str)
 
         line = ""
@@ -221,19 +231,8 @@ class Test:
         if not retcode:
             return retcode
 
-        # Start monitoring link messages on board
-        proc = self.start_link_monitor()
-        if proc == None:
-            return False
-
-        # Set desired modes for switch speed
         info_str = 'setting negotiation parameters'
-        retcode = self.set_modes(info_str, desired_modes)
-        if not retcode:
-            return retcode
-
-        # Collect output from monitoring of link messages on board
-        return self.collect_link_monitor(proc)
+        return self.set_modes(info_str, desired_modes)
 
     def run(self):
         ok = 0
