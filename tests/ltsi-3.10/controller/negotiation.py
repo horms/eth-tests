@@ -93,6 +93,18 @@ class Test:
         self.down_pattern = re.compile("%s %s" % (base_match, 'DOWN'))
         self.up_pattern = re.compile("%s %s" % (base_match, 'UP'))
 
+    def start_cmd(self, info_msg, cmd):
+        info(info_msg)
+
+        try:
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
+        except OSError as e:
+            print >>sys.stderr, 'error: ' + info_msg + ': execution failed:', e
+            return None
+
+        return proc
+
     def local_cmd(self, info_str, cmd):
         info(info_str)
         try:
@@ -139,11 +151,11 @@ class Test:
         return self.set_modes(info_str, self.board_modes)
 
     def start_link_monitor(self):
-        info('start monitoring link messages on board')
+        info_msg = 'start monitoring link messages on board'
         cmd = [ 'ip', '--oneline', 'monitor', 'link' ]
         cmd = self.board_cmd_args(cmd)
-        return subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+
+        return self.start_cmd(info_msg, cmd)
 
     def collect_link_monitor(self, proc):
         info_str = "collecting monitor link messages from board"
