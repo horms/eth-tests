@@ -4,7 +4,7 @@
 #
 # Simple test for network interface link negotiation between
 # a swtich and a board
-# 
+#
 # Copyright (C) 2013 Horms Soltutions Ltd.
 #
 # Contact: Simon Horman <horms@verge.net.au>
@@ -46,11 +46,11 @@ def info (str):
     pass
 
 def err (str):
-        print >>sys.stderr, "error: %s" % str
+    print >>sys.stderr, "error: %s" % str
 
 def fatal_err (str):
-        err(str)
-        exit(1)
+    err(str)
+    exit(1)
 
 def combinations(modes):
     l = [];
@@ -156,7 +156,7 @@ class Test:
         return False
 
     def run_one(self, desired_modes):
- 
+
         print "Testing: %s" % ' '.join(desired_modes)
 
         retcode = self.reset_modes()
