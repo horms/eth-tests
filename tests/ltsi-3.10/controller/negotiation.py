@@ -128,7 +128,8 @@ class Test:
         info('start monitoring link messages on board')
         cmd = [ 'ip', '--oneline', 'monitor', 'link' ]
         cmd = self.board_cmd_args(cmd)
-        return subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
 
     def collect_link_monitor(self, proc):
         info_str = "collecting monitor link messages from board"
