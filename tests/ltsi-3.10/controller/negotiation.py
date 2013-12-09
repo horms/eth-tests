@@ -17,6 +17,7 @@ import getopt
 import itertools;
 import os
 import re
+import select
 import subprocess
 import sys
 
@@ -51,6 +52,19 @@ def err (str):
 def fatal_err (str):
     err(str)
     exit(1)
+
+def err_stdio(msg, outdata, errdata):
+    msg += '\nStdout:'
+    if outdata:
+        msg += '\n' + outdata.rstrip('\r\n') + '\n'
+    msg += '\nStderr:'
+    if errdata:
+        msg += '\n' + errdata.rstrip('\r\n') + '\n'
+    err(msg.rstrip('\r\n'))
+
+def err_proc(proc, msg, outdata, errdata):
+   (out, err) = proc.communicate()
+   err_stdio(msg, outdata + out, errdata + err)
 
 def combinations(modes):
     l = [];
@@ -134,12 +148,47 @@ class Test:
     def collect_link_monitor(self, proc):
         info_str = "collecting monitor link messages from board"
         info(info_str)
-        proc.kill()
-        (outdata, errdata) = proc.communicate()
 
+        line = ""
+        outdata = ""
+        errdata = ""
         want_up = False
 
-        for line in outdata.split('\n'):
+        while True:
+            if proc.poll():
+                err_proc(proc, info_str, outdata, '')
+                return False
+            fds = [proc.stdout, proc.stderr]
+            try:
+                (r, w, e) = select.select(fds, [], fds, 10)
+                if e or w:
+                    proc.kill()
+                    err_proc(proc, info_str + ': select error', outdata, '')
+                    return False
+                if not r:
+                    proc.kill()
+                    err_proc(proc, info_str + ': select timeout', outdata, '')
+                    return False
+            except select.error, e:
+                print >>sys.stderr, 'error: select failed:', e
+                return False
+
+            fd = r[0]
+            c = fd.read(1)
+            if c == '': # EOF
+                err_proc(proc, info_str + ': insufficient data read',
+                         outdata, errdata)
+                return False
+
+            if fd == proc.stderr:
+                errdata +=c
+                continue
+
+            outdata += c
+            if c != '\n':
+                line += c
+                continue
+
             if want_up:
                 pattern = self.up_pattern
             else:
@@ -149,12 +198,12 @@ class Test:
                 continue
 
             if want_up:
+                proc.kill()
+                proc.wait()
                 return True
-            else:
-                want_up = True
 
-        err("%s\nStderr:\n%s\nStdout:\n%s" % (info_str, errdata, outdata))
-        return False
+            want_up = True
+            line = ""
 
     def run_one(self, desired_modes):
 
