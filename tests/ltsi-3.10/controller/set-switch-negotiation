@@ -1,0 +1,238 @@
+#!/bin/sh
+# \
+exec expect -f "$0" ${1+"$@"}
+
+# set-switch-negotiation
+#
+# Copyright (C) 2013 Horms Soltutions Ltd.
+#
+# Contact: Simon Horman <horms@verge.net.au>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+
+
+proc out {} {
+	global tmpfile
+	log_file
+	log_user 1
+	set fl [open $tmpfile r]
+	puts "=== Begin Error Log ==="
+	puts [read $fl]
+	puts "==== End Error Log ===="
+	close $fl
+	file delete $tmpfile
+	puts "ERROR: Unexpected data\n"
+	exit 1
+}
+
+proc tout { log } {
+	puts "timeout: ${log}"
+	out
+}
+
+proc err { log } {
+	puts "error: ${log}"
+	out
+}
+
+proc dbg { log } {
+	# puts $log
+}
+
+proc usage {} {
+	global argv0
+	puts "Usage:"
+	puts "     ${argv0} HOST USERNAME PASSWORD INTERFACE set off|default"
+	puts "     ${argv0} HOST USERNAME PASSWORD INTERFACE set MODE..."
+	puts "     ${argv0} HOST USERNAME PASSWORD INTERFACE show"
+	puts ""
+	puts "  where:"
+	puts "     mode is one of: 10h, 10f, 100h, 100f, 1000f"
+	puts "     interface is: giN, where N is a decimal number"
+	puts ""
+	puts "  e.g. ${argv0} 172.17.100.1 user pass gi9 10h"
+	exit 1
+}
+
+set hostname_re "\[\n\r\]\[a-zA-Z\](\[a-zA-Z0-9-\]*\[a-zA-Z0-9\])?"
+set prompt_re "${hostname_re}#"
+set config_prompt_re "${hostname_re}\\(config\\)#"
+set config_if_prompt_re "${hostname_re}\\(config-if\\)#"
+
+proc send_cmd { session info cmd expect_re } {
+	set spawn_id $session
+
+	dbg $info
+	send "${cmd}\n"
+	expect {
+		-re "$expect_re" { }
+		-re "\[\n\r\]%" { err $info }
+		default { tout $info  }
+	}
+}
+
+proc set_cmd { session interface interface_cmd } {
+	global config_prompt_re
+	global config_if_prompt_re
+
+	send_cmd $session "entering config mode" "configure" $config_prompt_re
+	send_cmd $session "entering config-if mode" \
+		"interface ${interface}" $config_if_prompt_re
+	send_cmd $session "setting negotiation patameters" \
+		$interface_cmd $config_if_prompt_re
+}
+
+proc show_cmd { session interface } {
+	global prompt_re
+
+	set spawn_id $session
+
+	send_cmd $session "setting terminal datadump" \
+		"terminal datadump" $prompt_re
+
+	set result "negotiation"
+
+	set info "showing config"
+	dbg $info
+	send "show running-config interface ${interface}\n"
+	expect {
+		-re " *(\[ 0-9a-z\]*negotiation\[ 0-9a-z\]*)" {
+			set result $expect_out(1,string)
+		}
+		-re "$prompt_re" { }
+		-re "\[\n\r\]%" { err $info }
+		default { tout $info  }
+	}
+
+	switch $result {
+		"negotiation"		{ puts "default" }
+		"no negotiation"	{ puts "off" }
+		default			{ puts [string range $result 12 end] }
+	}
+}
+
+proc cmd { hostname username password interface action action_arg } {
+	global prompt_re
+
+	set info "opening connection"
+	dbg $info
+	spawn ssh "${username}@${hostname}"
+	set session $spawn_id
+
+	expect {
+		"User Name:"  { }
+		"usage: ssh"  { err "Could not invoke ssh" }
+		timeout { tout $info }
+		eof { err $info }
+	}
+
+	set info "sending username"
+	dbg $info
+	if {[catch {send "${username}\n"}] != 0} {
+		err "Could not open connection\n"
+	}
+	expect {
+		"Password:" {}
+		default { tout $info }
+	}
+
+	set info "sending password"
+	dbg $info
+	send "${password}\n"
+	expect {
+		-re "$prompt_re" { }
+		"User Name:" { err "Could not log in\n" }
+		default { tout $info  }
+	}
+
+	switch $action {
+		"set"	{ set_cmd $spawn_id $interface $action_arg }
+		"show"	{ show_cmd $spawn_id $interface }
+		default { err "invalid action: $action" }
+	}
+}
+
+proc parse_interface { interface } {
+	switch -re $interface {
+		"^gi\[0-9\]+$"	{ return $interface }
+		default	{
+			puts "Invalid interface: ${interface}"
+			usage
+		}
+	}
+}
+
+proc parse_name { key name } {
+	switch -re $name {
+		"^\[0-9a-zA-Z._-\]+$"	{ return $name }
+		default	{
+			puts "Invalid ${key}: ${name}"
+			usage
+		}
+	}
+}
+
+proc parse_set_args { set_args } {
+	set len [llength $set_args]
+
+	if { $len == 0 } { usage }
+
+	set first [lindex $set_args 0]
+	switch $first {
+		"default" {
+			if { $len > 1 } { usage }
+			return "negotiation"
+		}
+		"off"     {
+			if { $len > 1 } { usage }
+			return "no negotiation"
+		}
+	}
+
+	set result "negotiation"
+	foreach a $set_args {
+		switch -re $a {
+			"^(100?\[hf\]|1000f)$" { set result "${result} ${a}" }
+			default		{
+				puts "Unknown set mode: ${a}"
+				usage
+			}
+		}
+	}
+
+	return $result
+}
+
+if { $argc < 5 } { usage }
+
+set hostname [parse_name "hostname" [lindex $argv 0]]
+set username [parse_name "username" [lindex $argv 1]]
+set password [lindex $argv 2]
+set interface [parse_interface [lindex $argv 3]]
+set action [lindex $argv 4]
+
+trap out {SIGINT SIGTERM}
+set tmpfile [exec mktemp]
+log_user 0
+log_file -a $tmpfile
+
+set action_arg ""
+
+switch $action {
+	"set"	{
+		set action_arg [parse_set_args [lrange $argv 5 end]]
+	}
+	"show"	{ if { $argc > 5 } { usage } }
+	default {
+		puts "error: invalid action: $action"
+		usage
+	}
+}
+
+cmd $hostname $username $password $interface $action $action_arg
+
+file delete $tmpfile
+
+exit 0

@@ -1,0 +1,63 @@
+Environment
+-----------
+
+Target environment for running tests
+
+Three machines
+1. Controller
+   - Machine running Linux which controls the test
+   - Has ssh access to board
+2. Board
+   - board to be tested
+   - Provides ssh access to board
+3. Swtich
+   - Swtich to controll the link negotiation parameters of
+   - Should be directly connected to the board and thus,
+     allowing link negotiation between the switch and the board
+     to be tested
+   - Tests built against a Cisco SG300-JP-20
+
+Root File System of Board
+- I use NFS root
+- On some boards it is possible to use local flash
+- For tests with minimal dependencies it may be possible to use an initrd
+
+
+1. Ensure that expect and python 2.7 ins installed on controller
+
+2. Ensure that sshd is running on board
+   - Ideally this should happen automatically on boot
+
+3. Ensure that the controller has password-less access to the board
+   This may be achieved using:
+   - An ssh key with a passphrase in conjunction with the ssh-key agent or;
+   - An ssh key with no passprhase
+
+4. Ensure that ssh access to the CLI of the switch is available.
+   - The tests were tested using access as a user with privilege level 15
+   - The tests expect to be prompted for a uername and password
+
+5. Manually install board component of tests
+   - Data, libraries, programs etc...
+   - tests/ltsi-3.10/board/
+
+
+4. Controller executes test by running controller components locally.
+   These connect to the swtich and board using ssh as needed.
+
+   e.g.
+   ./tests/ltsi-3.10/controller/negotiation.py sw0 sw_user sw_pass gi1 \
+      armadillo800eva root eth0 fast_ether /opt/eth-tests/ltsi-3.10/common
+
+   See ./tests/ltsi-3.10/controller/negotiation.py -h for information
+   on the parameters to the test
+
+5. Test exists with a value of 0 on success and any other value on error
+
+   Tests may output informational messages to stdout or stderror
+
+   e.g.
+   ./tests/ltsi-3.10/controller/negotiation.py ...
+
+
+   Tests should output errors to stderror

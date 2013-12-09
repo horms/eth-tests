@@ -1,0 +1,10 @@
+
+Tests may be any executable format.
+The examples provides so far are (dash) shell scripts.
+
+There is one directory under tests per platform device to be tested
+
+The tests/common/ directory provides executables that may be
+used by per platform device tests. In the case of the examples
+provides so far this is where most of the albeit simple test logic
+lies. And the per platform device scripts are even simpler wrappers.
