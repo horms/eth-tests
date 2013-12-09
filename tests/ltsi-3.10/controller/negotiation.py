@@ -239,12 +239,7 @@ class Test:
         ng = 0
 
         for m in combinations(self.board_modes):
-            for i in range(7):
-                retval = self.run_one(list(m))
-                if retval:
-                    break
-                print "Retry"
-
+            retval = self.run_one(list(m))
             if retval:
                 ok = ok + 1
             else:
