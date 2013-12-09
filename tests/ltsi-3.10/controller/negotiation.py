@@ -17,7 +17,7 @@ import getopt
 import itertools;
 import os
 import re
-import subprocess;
+import subprocess
 import sys
 
 all_modes = ['10h', '10f', '100h', '100f', '1000f']
