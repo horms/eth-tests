@@ -10,8 +10,8 @@ Three machines
 2. Board
    - board to be tested
    - Provides ssh access to board
-3. Swtich
-   - Swtich to controll the link negotiation parameters of
+3. Switch
+   - Switch to control the link negotiation parameters of
    - Should be directly connected to the board and thus,
      allowing link negotiation between the switch and the board
      to be tested
@@ -23,19 +23,19 @@ Root File System of Board
 - For tests with minimal dependencies it may be possible to use an initrd
 
 
-1. Ensure that expect and python 2.7 ins installed on controller
+1. Ensure that expect and python 2.7 is installed on controller
 
 2. Ensure that sshd is running on board
    - Ideally this should happen automatically on boot
 
 3. Ensure that the controller has password-less access to the board
    This may be achieved using:
-   - An ssh key with a passphrase in conjunction with the ssh-key agent or;
-   - An ssh key with no passprhase
+   - An ssh key with a pass-phrase in conjunction with the ssh-key agent or;
+   - An ssh key with no pass-phrase
 
 4. Ensure that ssh access to the CLI of the switch is available.
    - The tests were tested using access as a user with privilege level 15
-   - The tests expect to be prompted for a uername and password
+   - The tests expect to be prompted for a username and password
 
 5. Manually install board component of tests
    - Data, libraries, programs etc...
@@ -54,10 +54,10 @@ Root File System of Board
 
 5. Test exists with a value of 0 on success and any other value on error
 
-   Tests may output informational messages to stdout or stderror
+   Tests may output informational messages to stdout or stderr
 
    e.g.
    ./tests/ltsi-3.10/controller/negotiation.py ...
 
 
-   Tests should output errors to stderror
+   Tests should output errors to stderr
