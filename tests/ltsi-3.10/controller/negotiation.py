@@ -110,9 +110,9 @@ class Test:
         if not proc:
             return False
 
-        retcode = proc.wait()
-        if retcode < 0:
-            err_proc(proc, info_str, "", "")
+        (outdata, errdata) = proc.communicate()
+        if proc.returncode != 0:
+            err_stdio(info_str, outdata, errdata)
             return False
 
         return True
