@@ -175,7 +175,7 @@ class Test:
 
         while True:
             if proc.poll():
-                err_proc(proc, info_str, outdata, '')
+                err_proc(proc, info_str, outdata, errdata)
                 return False
             fds = [proc.stdout, proc.stderr]
             try:
