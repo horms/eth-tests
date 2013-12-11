@@ -63,9 +63,9 @@ def err_stdio(msg, outdata, errdata):
     err(msg.rstrip('\r\n'))
 
 def err_proc(proc, msg, outdata, errdata):
-   proc.kill()
-   err_stdio(msg, outdata, errdata)
-   proc.wait()
+    proc.kill()
+    err_stdio(msg, outdata, errdata)
+    proc.wait()
 
 def combinations(modes):
     l = [];
