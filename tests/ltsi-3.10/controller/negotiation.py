@@ -64,6 +64,30 @@ def err_stdio(msg, outdata, errdata):
 
 def err_proc(proc, msg, outdata, errdata):
     proc.kill()
+
+    fds = [proc.stdout, proc.stderr]
+    while fds:
+        try:
+            (r, w, e) = select.select(fds, [], fds, 0.1)
+            if not r:
+                break;
+        except select.error, e:
+            print >>sys.stderr, 'error: select failed:', e
+            break
+
+        for fd in r:
+            data = fd.read()
+            if data == '': # EOF
+                fds.remove(fd)
+                continue
+
+            if fd == proc.stdout:
+                outdata += data
+            elif fd == proc.stderr:
+                errdata += data
+            else:
+                break
+
     err_stdio(msg, outdata, errdata)
     proc.wait()
 
