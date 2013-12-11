@@ -272,6 +272,7 @@ def usage():
 "    BOARD_INTERFACE_TYPE:\n"
 "                     Is the type of the interface on the board.\n" +
 "                     Either \'fast_ether\' or \'giga_ether\'\n" +
+"    BOARD_TEST_DIR:  Directory on board with test scripts\n" +
 "\n" +
 "  options:\n" +
 "    -h: Dipslay this help message and exit\n" +
