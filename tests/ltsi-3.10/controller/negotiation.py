@@ -63,8 +63,9 @@ def err_stdio(msg, outdata, errdata):
     err(msg.rstrip('\r\n'))
 
 def err_proc(proc, msg, outdata, errdata):
-   (out, err) = proc.communicate()
-   err_stdio(msg, outdata + out, errdata + err)
+   proc.kill()
+   err_stdio(msg, outdata, errdata)
+   proc.wait()
 
 def combinations(modes):
     l = [];
@@ -180,11 +181,9 @@ class Test:
             try:
                 (r, w, e) = select.select(fds, [], fds, 10)
                 if e or w:
-                    proc.kill()
                     err_proc(proc, info_str + ': select error', outdata, '')
                     return False
                 if not r:
-                    proc.kill()
                     err_proc(proc, info_str + ': select timeout', outdata, '')
                     return False
             except select.error, e:
