@@ -13,6 +13,7 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; version 2 of the License.
 
+import errno
 import getopt
 import itertools;
 import os
@@ -39,6 +40,16 @@ def max_mode (modes):
     fatal_err("max_mode: All modes are invalid")
 
 
+def try_kill (proc):
+    try:
+        proc.kill()
+    except OSError, e:
+        if e.errno != errno.ESRCH:
+            print >>sys.stderr, 'error: kill failed:', e
+            return False
+
+    return True
+
 verbose = False
 
 def info (str):
@@ -63,7 +74,7 @@ def err_stdio(msg, outdata, errdata):
     err(msg.rstrip('\r\n'))
 
 def err_proc(proc, msg, outdata, errdata):
-    proc.kill()
+    try_kill(proc)
 
     fds = [proc.stdout, proc.stderr]
     while fds:
@@ -239,9 +250,11 @@ class Test:
                 continue
 
             if want_up:
-                proc.kill()
+                ret = True
+                if not try_kill(proc):
+                    ret = False
                 proc.wait()
-                return True
+                return ret
 
             want_up = True
             line = ""
