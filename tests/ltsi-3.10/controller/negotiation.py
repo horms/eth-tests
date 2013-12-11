@@ -247,7 +247,7 @@ class Test:
 
         self.reset_modes()
 
-        print "Test Complete: Passed=%d Faled=%d" % (ok, ng)
+        print "Test Complete: Passed=%d Failed=%d" % (ok, ng)
 
         if ng == 0:
             return True
