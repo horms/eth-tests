@@ -5,7 +5,7 @@
 # Simple test for network interface link negotiation between
 # a swtich and a board
 #
-# Copyright (C) 2013 Horms Soltutions Ltd.
+# Copyright (C) 2013 Horms Solutions Ltd.
 #
 # Contact: Simon Horman <horms@verge.net.au>
 #

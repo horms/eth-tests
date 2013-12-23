@@ -3,7 +3,7 @@
 #
 # Simple ip-based test for network interface whose link is up
 # 
-# Copyright (C) 2013 Horms Soltutions Ltd.
+# Copyright (C) 2013 Horms Solutions Ltd.
 #
 # Contact: Simon Horman <horms@verge.net.au>
 #

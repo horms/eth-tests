@@ -4,7 +4,7 @@ exec expect -f "$0" ${1+"$@"}
 
 # set-switch-negotiation
 #
-# Copyright (C) 2013 Horms Soltutions Ltd.
+# Copyright (C) 2013 Horms Solutions Ltd.
 #
 # Contact: Simon Horman <horms@verge.net.au>
 #
