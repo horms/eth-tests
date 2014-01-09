@@ -31,7 +31,7 @@ def possible_modes (type):
         if type == interface_types[i][0]:
             count = interface_types[i][1]
             return all_modes[0:count]
-    fatal_err("Unknown interface type \'%d\'" % type)
+    fatal_err("Unknown interface type \'%s\'" % type)
 
 def max_mode (modes):
     for m in reversed(all_modes):
