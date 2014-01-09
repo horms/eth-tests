@@ -264,11 +264,9 @@ class Test:
         print "Testing: %s" % ' '.join(desired_modes)
 
         retcode = self.reset_modes()
-        if not retcode:
-            return retcode
 
         info_str = 'setting negotiation parameters'
-        return self.set_modes(info_str, desired_modes)
+        return self.set_modes(info_str, desired_modes) and retcode
 
     def run(self):
         ok = 0
