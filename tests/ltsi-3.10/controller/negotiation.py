@@ -214,10 +214,10 @@ class Test:
             try:
                 (r, w, e) = select.select(fds, [], fds, 10)
                 if e or w:
-                    err_proc(proc, info_str + ': select error', outdata, '')
+                    err_proc(proc, info_str + ': select error', outdata, errdata)
                     return False
                 if not r:
-                    err_proc(proc, info_str + ': select timeout', outdata, '')
+                    err_proc(proc, info_str + ': select timeout', outdata, errdata)
                     return False
             except select.error, e:
                 print >>sys.stderr, 'error: select failed:', e
