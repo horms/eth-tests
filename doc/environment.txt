@@ -46,8 +46,9 @@ Root File System of Board
    These connect to the switch and board using ssh as needed.
 
    e.g.
-   ./tests/ltsi-3.10/controller/negotiation.py sw0 sw_user sw_pass gi1 \
-      armadillo800eva root eth0 fast_ether /opt/eth-tests/ltsi-3.10/common
+   ./tests/ltsi-3.10/controller/negotiation.py fast_ether \
+      sw0 sw_user sw_pass gi1 \
+      armadillo800eva root eth0 /opt/eth-tests/ltsi-3.10/common
 
    See ./tests/ltsi-3.10/controller/negotiation.py -h for information
    on the parameters to the test

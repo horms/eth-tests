@@ -109,9 +109,10 @@ def combinations(modes):
     return l
 
 class Test:
-    def __init__(self, argv_0, sw_hostname, sw_username, sw_password,
+    def __init__(self, argv_0, test_type, sw_hostname, sw_username, sw_password,
                  sw_interface_name, board_hostname, board_username,
-                 board_interface_name, board_interface_type, board_path):
+                 board_interface_name, board_path):
+        self.test_type = test_type
         self.sw_hostname = sw_hostname
         self.sw_username = sw_username
         self.sw_password = sw_password
@@ -119,10 +120,9 @@ class Test:
         self.board_hostname = board_hostname
         self.board_username = board_username
         self.board_interface_name = board_interface_name
-        self.board_interface_type = board_interface_type
         self.board_path = board_path
 
-        self.board_modes = possible_modes(self.board_interface_type)
+        self.board_modes = possible_modes(self.test_type)
         self.dir = os.path.dirname(argv_0)
 
         base_match = "%s: .* state" % self.board_interface_name
@@ -257,21 +257,21 @@ class Test:
             want_up = True
             line = ""
 
-    def run_one(self, desired_modes):
+    def run_one_negotiate(self, desired_modes):
 
-        print "Testing: %s" % ' '.join(desired_modes)
+        print "Testing link negotiation: %s" % ' '.join(desired_modes)
 
         retcode = self.reset_modes()
 
         info_str = 'setting negotiation parameters'
         return self.set_modes(info_str, desired_modes) and retcode
 
-    def run(self):
+    def run_negotiate(self):
         ok = 0
         ng = 0
 
         for m in combinations(self.board_modes):
-            retval = self.run_one(list(m))
+            retval = self.run_one_negotiate(list(m))
             if retval:
                 ok = ok + 1
             else:
@@ -288,12 +288,16 @@ class Test:
 
 def usage():
         fatal_err(
-"Usage: negotiation.py [options] SWITCH_HOSTNAME SWTICH_USERNAME \\\n" +
+"Usage: negotiation.py [options] TEST_TYPE \\\n" +
+"                      SWITCH_HOSTNAME SWTICH_USERNAME \\\n" +
 "                      SWITCH_PASSWORD SWTICH_INTERFACE\\\n" +
 "                      BOARD_HOSTNAME BOARD_USERNAME \\\n" +
-"                      BOARD_INTERFACE BOARD_INTERFACE_TYPE \\\n" +
-"                      BOARD_SCRIPT_PATH\n" +
+"                      BOARD_INTERFACE BOARD_SCRIPT_PATH\n" +
 "  where:\n" +
+"    TEST_TYPE:       Is the type of test to run:\n" +
+"                     \'fast_ether\' for link negotiation of fast ethernet\n"
+"                     \'giga_ether\' for link negotiation of gigabit ethernet\n"
+"\n"
 "    SWITCH_HOSTNAME:  Is the hostname of the swtich to connect to\n" +
 "    SWITCH_USERNAME:  Is the username to use when when loging into the swtich\n" +
 "    SWITCH_PASSWORD:  Is the password to use when when loging into the swtich\n" +
@@ -302,9 +306,6 @@ def usage():
 "    BOARD_HOSTNAME:  Is the hostname of the board to connect to\n" +
 "    BOARD_USERNAME:  Is the username to use when when loging into the board\n" +
 "    BOARD_INTERFACE: Is the interface to test on the board\n" +
-"    BOARD_INTERFACE_TYPE:\n"
-"                     Is the type of the interface on the board.\n" +
-"                     Either \'fast_ether\' or \'giga_ether\'\n" +
 "    BOARD_TEST_DIR:  Directory on board with test scripts\n" +
 "\n" +
 "  options:\n" +
@@ -337,6 +338,6 @@ for opt, arg in opts:
         verbose = True
 
 test = Test(sys.argv[0], *args)
-retval = test.run()
+retval = test.run_negotiate()
 if retval == False:
     exit(1)
