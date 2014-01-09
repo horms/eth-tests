@@ -21,6 +21,7 @@ import re
 import select
 import subprocess
 import sys
+import time
 
 all_modes = ['10h', '10f', '100h', '100f', '1000f']
 
@@ -122,7 +123,9 @@ class Test:
         self.board_interface_name = board_interface_name
         self.board_path = board_path
 
-        self.board_modes = possible_modes(self.test_type)
+        if self.test_type == "fast_ether" or self.test_type == "giga_ether":
+            self.board_modes = possible_modes(self.test_type)
+
         self.dir = os.path.dirname(argv_0)
 
         base_match = "%s: .* state" % self.board_interface_name
@@ -158,6 +161,16 @@ class Test:
 
     def board_cmd(self, info_str, cmd):
         return self.local_cmd(info_str, self.board_cmd_args(cmd))
+
+    def swtich_shutdown(self, info_str, shutdown):
+        cmd = [ self.dir + '/set-switch', self.sw_hostname,
+                self.sw_username, self.sw_password, self.sw_interface_name,
+                'set']
+        if not shutdown:
+            cmd += ['no']
+        cmd += ['shutdown']
+
+        return self.local_cmd(info_str, cmd)
 
     def swtich_speed(self, info_str, desired_modes):
         cmd = [ self.dir + '/set-switch', self.sw_hostname,
@@ -212,7 +225,7 @@ class Test:
                 return False
             fds = [proc.stdout, proc.stderr]
             try:
-                (r, w, e) = select.select(fds, [], fds, 10)
+                (r, w, e) = select.select(fds, [], fds, 20)
                 if e or w:
                     err_proc(proc, info_str + ': select error', outdata, errdata)
                     return False
@@ -286,6 +299,57 @@ class Test:
         else:
             return False
 
+    def run_shutdown__(self):
+        # Make sure the link is up
+        i_str = 'Setting no shutdown on switch'
+        retcode = self.swtich_shutdown(i_str, False)
+        if not retcode:
+            return retcode
+
+        i_str = 'Start monitoring link messages on board'
+        proc = self.start_link_monitor(i_str)
+        if proc == None:
+            return False
+
+        i_str = 'Setting shutdown on switch'
+        retcode = self.swtich_shutdown(i_str, True)
+        if not retcode:
+            self.swtich_shutdown(i_str, False)
+            return retcode
+
+        # The monitor runs over ssh and thus probably isn't working
+        # if the link is shutdown. So just sleep for a bit and
+        # assume shutdown has taken effect
+        time.sleep(1)
+
+        i_str = 'Setting no shutdown on switch'
+        retcode = self.swtich_shutdown(i_str, False)
+        if not retcode:
+            return retcode
+
+        i_str = 'Collect output from monitoring of link messages on board'
+        return self.collect_link_monitor(proc, i_str)
+
+    def run_shutdown(self):
+
+        print "Testing link shutdown"
+
+        retcode = self.run_shutdown__()
+
+        if retcode:
+            ret_str = "Passed"
+        else:
+            ret_str = "Failed"
+
+        print "Test Complete: %s" % (ret_str)
+        return retcode
+
+    def run(self):
+            if self.test_type == "fast_ether" or self.test_type == "giga_ether":
+                return self.run_negotiate()
+            if self.test_type == "shutdown":
+                return self.run_shutdown()
+
 def usage():
         fatal_err(
 "Usage: negotiation.py [options] TEST_TYPE \\\n" +
@@ -297,6 +361,7 @@ def usage():
 "    TEST_TYPE:       Is the type of test to run:\n" +
 "                     \'fast_ether\' for link negotiation of fast ethernet\n"
 "                     \'giga_ether\' for link negotiation of gigabit ethernet\n"
+"                     \'shutdown\' for link shutdown\n"
 "\n"
 "    SWITCH_HOSTNAME:  Is the hostname of the swtich to connect to\n" +
 "    SWITCH_USERNAME:  Is the username to use when when loging into the swtich\n" +
@@ -338,6 +403,6 @@ for opt, arg in opts:
         verbose = True
 
 test = Test(sys.argv[0], *args)
-retval = test.run_negotiate()
+retval = test.run()
 if retval == False:
     exit(1)
