@@ -184,11 +184,9 @@ class Test:
         i_str = ('%s: collect output from monitoring of link messages ' +
                  'on board') % info_str
         retcode = self.collect_link_monitor(proc, i_str)
-        if not retcode:
-            return retcode
 
         i_str = '%s: checking link speed on board' % info_str
-        return self.check_board_speed(i_str, max_mode(desired_modes))
+        return self.check_board_speed(i_str, max_mode(desired_modes)) and retcode
 
     def reset_modes(self):
         info_str = 'resetting negotiation parameters'
