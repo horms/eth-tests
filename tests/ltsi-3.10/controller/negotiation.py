@@ -160,7 +160,7 @@ class Test:
         return self.local_cmd(info_str, self.board_cmd_args(cmd))
 
     def swtich_speed(self, info_str, desired_modes):
-        cmd = [ self.dir + '/set-switch-negotiation', self.sw_hostname,
+        cmd = [ self.dir + '/set-switch', self.sw_hostname,
                 self.sw_username, self.sw_password, self.sw_interface_name,
                 'set' ] + desired_modes;
         return self.local_cmd(info_str, cmd)
