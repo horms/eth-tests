@@ -45,8 +45,9 @@ proc usage {} {
 	global argv0
 	puts "Usage:"
 	puts "     ${argv0} HOST USERNAME PASSWORD INTERFACE set negotiation \[MODE\]..."
-	puts "     ${argv0} HOST USERNAME PASSWORD INTERFACE set no negotiation"
-	puts "     ${argv0} HOST USERNAME PASSWORD INTERFACE show negotiation"
+	puts "     ${argv0} HOST USERNAME PASSWORD INTERFACE set shutdown"
+	puts "     ${argv0} HOST USERNAME PASSWORD INTERFACE set no negotiation|shutdown"
+	puts "     ${argv0} HOST USERNAME PASSWORD INTERFACE show negotiation|shutdown"
 	puts ""
 	puts "  where:"
 	puts "     mode is one of: 10h, 10f, 100h, 100f, 1000f"
@@ -84,7 +85,7 @@ proc set_cmd { session interface interface_cmd } {
 		$interface_cmd $config_if_prompt_re
 }
 
-proc show_cmd { session interface } {
+proc show_cmd__ { session interface match default } {
 	global prompt_re
 
 	set spawn_id $session
@@ -92,13 +93,13 @@ proc show_cmd { session interface } {
 	send_cmd $session "setting terminal datadump" \
 		"terminal datadump" $prompt_re
 
-	set result "negotiation"
+	set result $default
 
 	set info "showing config"
 	dbg $info
 	send "show running-config interface ${interface}\n"
 	expect {
-		-re " *(\[ 0-9a-z\]*negotiation\[ 0-9a-z\]*)" {
+		-re " *(\[ 0-9a-z\]*${match}\[ 0-9a-z\]*)" {
 			set result $expect_out(1,string)
 		}
 		-re "$prompt_re" { }
@@ -107,6 +108,17 @@ proc show_cmd { session interface } {
 	}
 
 	puts "$result"
+}
+
+proc show_cmd { session interface subcmd } {
+	switch $subcmd {
+		"negotiation" {
+			puts [show_cmd__ $session $interface "negotiation" "negotiation"]
+		}
+		"shutdown" {
+			puts [show_cmd__ $session $interface "shutdown" "no shutdown"]
+		}
+	}
 }
 
 proc cmd { hostname username password interface action action_arg } {
@@ -145,7 +157,7 @@ proc cmd { hostname username password interface action action_arg } {
 
 	switch $action {
 		"set"	{ set_cmd $spawn_id $interface $action_arg }
-		"show"	{ show_cmd $spawn_id $interface }
+		"show"	{ show_cmd $spawn_id $interface $action_arg }
 		default { err "invalid action: $action" }
 	}
 }
@@ -177,9 +189,10 @@ proc parse_subcmd_no_args { set_args } {
 
 	set first [lindex $set_args 0]
 	switch $first {
-		"negotiation" {
+		"negotiation" -
+		"shutdown" {
 			if { $len > 1 } { usage }
-			return "negotiation"
+			return "$first"
 		}
 		default { usage }
 	}
@@ -207,6 +220,10 @@ proc parse_subcmd_args { set_args } {
 					}
 				}
 			}
+		}
+		"shutdown" {
+			if { $len > 1 } { usage }
+			return "$first"
 		}
 		"no" {
 			set result [parse_subcmd_no_args [lindex $set_args 1]]
