@@ -23,10 +23,11 @@ Root File System of Board
 - For tests with minimal dependencies it may be possible to use an initrd
 
 
-1. Ensure that expect and python 2.7 is installed on controller
+1. Ensure that expect, netperf and python 2.7 is installed on controller
 
-2. Ensure that sshd is running on board
+2. Ensure that sshd and netserver are running on board
    - Ideally this should happen automatically on boot
+   - netserver is the server-side of netperf
 
 3. Ensure that the controller has password-less access to the board
    This may be achieved using:
